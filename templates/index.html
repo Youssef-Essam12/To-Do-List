@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shawerma Tasks</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1; /* Modern Indigo */
+            --primary-hover: #4f46e5;
+            --bg: #f8fafc;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            padding: 60px 20px;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .container {
+            background: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+            width: 100%;
+            max-width: 480px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            letter-spacing: -0.025em;
+            text-align: center;
+            margin-bottom: 2rem;
+            color: var(--text-main);
+        }
+
+        /* Modern Input Group */
+        .add-task-form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 2.5rem;
+        }
+
+        input {
+            padding: 12px 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .submit-btn {
+            padding: 12px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        .submit-btn:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        /* List Items */
+        ul {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        li {
+            background: #fff;
+            border: 1px solid #f1f5f9;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+        }
+
+        li:hover {
+            border-color: #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .task-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .task-id {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .task-title {
+            font-weight: 500;
+            color: var(--text-main);
+            font-size: 1.05rem;
+        }
+
+        .task-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .status-badge {
+            font-size: 0.7rem;
+            padding: 4px 10px;
+            border-radius: 6px;
+            background: #f1f5f9;
+            color: #475569;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        /* Subtle Delete Button */
+        .delete-btn {
+            background-color: transparent;
+            color: #94a3b8;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .delete-btn:hover {
+            background-color: #fef2f2;
+            color: var(--danger);
+            border-color: #fee2e2;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Task Manager</h1>
+        
+        <form class="add-task-form" action="/add-task" method="post">
+            <input type="text" name="title" placeholder="What needs to be done?" required>
+            <input type="text" name="state" placeholder="Status (e.g., In Progress)" required>
+            <button type="submit" class="submit-btn">Create Task</button>
+        </form>
+
+        <ul>
+            {% for task in tasks_list %}
+                <li>
+                    <div class="task-info">
+                        <span class="task-id">ID-{{ task.id }}</span>
+                        <span class="task-title">{{ task.title }}</span>
+                    </div>
+                    
+                    <div class="task-right">
+                        <span class="status-badge">{{ task.state }}</span>
+
+                        <form action="/toggle-task/{{ task.id }}" method="POST" style="margin:0;">
+                            <input type="checkbox" name="done" onchange="this.form.submit()" {% if task.done %}checked{% endif %}>
+                        </form>
+
+                        <form action="/delete-task/{{ task.id }}" method="POST" style="margin:0;">
+                            <button type="submit" class="delete-btn">Delete</button>
+                        </form>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+</body>
+</html>
