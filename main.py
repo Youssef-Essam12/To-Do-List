@@ -1,11 +1,26 @@
-from fastapi import FastAPI, Request, Form
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Request, Form, Depends
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from Task import *
+from sqlalchemy.orm import Session
+from typing import List
 
+from database import SessionLocal, engine, create_tables
+from models import TaskDB
+from Task import Task
+
+create_tables()
 app = FastAPI()
 
 templates = Jinja2Templates(directory="templates")
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
 tasks = []
 
 @app.get("/", response_class=HTMLResponse)
