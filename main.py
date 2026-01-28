@@ -2,13 +2,9 @@ from fastapi import FastAPI, Request, Form, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
-from typing import List
-
 from database import SessionLocal, engine, create_tables
 from models import TaskDB
-from Task import Task
 
-create_tables()
 app = FastAPI()
 
 templates = Jinja2Templates(directory="templates")
@@ -20,39 +16,47 @@ def get_db():
     finally:
         db.close()
 
-
-tasks = []
+@app.on_event("startup")
+def startup():
+    create_tables()
 
 @app.get("/", response_class=HTMLResponse)
-async def root(request: Request):
+async def root(request: Request, db: Session = Depends(get_db)):
+    tasks = db.query(TaskDB).order_by(TaskDB.id).all()
     return templates.TemplateResponse("index.html", {"request": request, "tasks_list": tasks})
 
 @app.post("/add-task")
 async def add_task(
-        request: Request,
         title: str = Form(...),
-        state: str = Form(...)    
+        status: str = Form(...),
+        db: Session = Depends(get_db)
 ):
-    new_task = Task(title=title, id=len(tasks)+1, state=state, done=False)
-    tasks.append(new_task)
-    return templates.TemplateResponse("index.html", {"request": request, "tasks_list": tasks})
+    new_task = TaskDB(title=title, status=status)
+    db.add(new_task)
+    db.commit()
+    db.refresh(new_task)
+    return RedirectResponse("/", status_code=303)
 
 @app.post("/delete-task/{task_id}")
 async def delete_task(
-        request: Request,
-        task_id: int
+        task_id: int,
+        db: Session = Depends(get_db)
 ):
-    tasks.pop(task_id-1)
-    cnt = 1
-    for task in tasks:
-        task.id = cnt
-        cnt += 1
-    return templates.TemplateResponse("index.html", {"request": request, "tasks_list": tasks})
+    task = db.get(TaskDB, task_id)
+    if task:
+        db.delete(task)
+        db.commit()
+    return RedirectResponse("/", status_code=303)
+    
 
 @app.post("/toggle-task/{task_id}")
 async def toggle_task(
-    request: Request,
-    task_id: int
+    task_id: int,
+    db: Session = Depends(get_db)
 ):
-    tasks[task_id-1].done ^= 1
-    return templates.TemplateResponse("index.html", {"request": request, "tasks_list": tasks})
+    task = db.get(TaskDB, task_id)
+    if task:
+        task.done ^= 1
+        db.commit()
+    tasks = db.query(TaskDB).all()
+    return RedirectResponse("/", status_code=303)

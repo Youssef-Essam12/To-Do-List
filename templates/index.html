@@ -174,7 +174,7 @@
         
         <form class="add-task-form" action="/add-task" method="post">
             <input type="text" name="title" placeholder="What needs to be done?" required>
-            <input type="text" name="state" placeholder="Status (e.g., In Progress)" required>
+            <input type="text" name="status" placeholder="Status (e.g., In Progress)" required>
             <button type="submit" class="submit-btn">Create Task</button>
         </form>
 
@@ -182,12 +182,12 @@
             {% for task in tasks_list %}
                 <li>
                     <div class="task-info">
-                        <span class="task-id">ID-{{ task.id }}</span>
+                        <span class="task-id">ID-{{ loop.index }}</span>
                         <span class="task-title">{{ task.title }}</span>
                     </div>
                     
                     <div class="task-right">
-                        <span class="status-badge">{{ task.state }}</span>
+                        <span class="status-badge">{{ task.status }}</span>
 
                         <form action="/toggle-task/{{ task.id }}" method="POST" style="margin:0;">
                             <input type="checkbox" name="done" onchange="this.form.submit()" {% if task.done %}checked{% endif %}>
