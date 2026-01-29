@@ -3,7 +3,8 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from database import SessionLocal, engine, create_tables
-from models import TaskDB
+from models import *
+import security
 
 app = FastAPI()
 
@@ -23,7 +24,8 @@ def startup():
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request, db: Session = Depends(get_db)):
     tasks = db.query(TaskDB).order_by(TaskDB.id).all()
-    return templates.TemplateResponse("index.html", {"request": request, "tasks_list": tasks})
+    msg = request.query_params.get("msg")
+    return templates.TemplateResponse("index.html", {"request": request, "tasks_list": tasks, "message": msg})
 
 @app.post("/add-task")
 async def add_task(
@@ -60,3 +62,47 @@ async def toggle_task(
         db.commit()
     tasks = db.query(TaskDB).all()
     return RedirectResponse("/", status_code=303)
+
+@app.get("/signup/", response_class=HTMLResponse)
+async def signup_page(request: Request):
+    return templates.TemplateResponse("signup.html", {"request": request})
+
+@app.post("/signup/", response_class=HTMLResponse)
+async def signup(request: Request, name = Form(...), email = Form(...), password = Form(...), db = Depends(get_db)):    
+    user = db.query(User).filter(User.email == email).first()
+    if (not user):
+        new_user = User(name=name, email=email, password_hash=security.hash_password(password))
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        return RedirectResponse("/login/?msg=signup_ok", status_code=303)
+    else:
+        return templates.TemplateResponse(
+            "signup.html",
+            {
+                "request": request,
+                "message": "User already exists"
+            },
+            status_code=409
+        )
+
+@app.get("/login/", response_class=HTMLResponse)
+async def login_page(request: Request):
+    msg = request.query_params.get("msg")
+    return templates.TemplateResponse("login.html", {"request": request, "message": msg})
+
+@app.post("/login/", response_class=HTMLResponse)
+async def login(request: Request, email = Form(...), password = Form(...), db = Depends(get_db)):
+    # check if email exists and verify password
+    user = db.query(User).filter(User.email == email).first()
+    if (user and security.verify_password(password, user.password_hash)):
+        return RedirectResponse(f"/?msg=Welcome Back {user.name}!", status_code=303)
+    else:
+        return templates.TemplateResponse(
+            "login.html",
+            {
+                "request": request,
+                "message": "Login Failed"
+            },
+            status_code=401      
+        )

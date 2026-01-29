@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up | Shawerma</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #f0f2f5; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        .container { background: white; display: flex; width: 850px; border-radius: 12px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
+        .visual { flex: 1; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px; display: flex; flex-direction: column; justify-content: center; }
+        .form-section { flex: 1.2; padding: 50px; position: relative; }
+        h2 { margin-bottom: 10px; color: #333; }
+        p.subtitle { color: #666; margin-bottom: 30px; font-size: 0.9rem; }
+        .input-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.85rem; color: #444; }
+        input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; outline: none; transition: border 0.3s; }
+        input:focus { border-color: #667eea; }
+        .btn { width: 100%; padding: 12px; background: #667eea; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: background 0.3s; }
+        .btn:hover { background: #5a67d8; }
+        .switch { text-align: center; margin-top: 20px; font-size: 0.85rem; }
+        .switch a { color: #667eea; text-decoration: none; font-weight: bold; }
+        @media (max-width: 768px) { .visual { display: none; } .container { width: 90%; } }
+
+        /* Popup styling */
+        .popup {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #4CAF50; /* green for success, you can change for errors */
+            color: white;
+            padding: 12px 20px;
+            border-radius: 6px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="visual">
+            <h1>Join Shawerma.</h1>
+            <p>Unlock your creative potential with the world's most intuitive platform.</p>
+        </div>
+        <div class="form-section">
+            <h2>Create Account</h2>
+            <p class="subtitle">Start your 14-day free trial today.</p>
+
+            <!-- Signup form -->
+            <form method="POST" action="/signup/">
+                <div class="input-group">
+                    <label>Full Name</label>
+                    <input type="text" name="name" placeholder="John Doe" required>
+                </div>
+                <div class="input-group">
+                    <label>Email Address</label>
+                    <input type="email" name="email" placeholder="name@company.com" required>
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" name="password" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn">Sign Up</button>
+            </form>
+
+            <p class="switch">Already have an account? <a href="/login/">Log In</a></p>
+
+            <!-- Popup message -->
+            {% if message %}
+            <div class="popup">{{ message }}</div>
+            <script>
+                setTimeout(() => {
+                    const popup = document.querySelector(".popup");
+                    if (popup) popup.style.display = "none";
+                }, 10000);
+            </script>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
