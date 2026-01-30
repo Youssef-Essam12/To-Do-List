@@ -23,17 +23,23 @@ def startup():
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request, db: Session = Depends(get_db)):
-    tasks = db.query(TaskDB).order_by(TaskDB.id).all()
-    msg = request.query_params.get("msg")
-    return templates.TemplateResponse("index.html", {"request": request, "tasks_list": tasks, "message": msg})
+    current_user = security.get_logged_user(request, db)
+    if (current_user):
+        tasks = db.query(TaskDB).filter(TaskDB.user_id == current_user.id).order_by(TaskDB.id).all()
+        msg = request.query_params.get("msg")
+        return templates.TemplateResponse("index.html", {"request": request, "tasks_list": tasks, "message": msg})
+    else:
+        return templates.TemplateResponse("login.html", {"request":request})    
 
 @app.post("/add-task")
 async def add_task(
+        request: Request,
         title: str = Form(...),
         status: str = Form(...),
         db: Session = Depends(get_db)
 ):
-    new_task = TaskDB(title=title, status=status)
+    current_user = security.get_logged_user(request, db)
+    new_task = TaskDB(title=title, status=status, user_id=current_user.id)
     db.add(new_task)
     db.commit()
     db.refresh(new_task)
@@ -96,7 +102,11 @@ async def login(request: Request, email = Form(...), password = Form(...), db = 
     # check if email exists and verify password
     user = db.query(User).filter(User.email == email).first()
     if (user and security.verify_password(password, user.password_hash)):
-        return RedirectResponse(f"/?msg=Welcome Back {user.name}!", status_code=303)
+        session_id = security.generate_session_id()
+        security.redis_client.set(f"session_id:{session_id}", user.id, 3600)
+        response = RedirectResponse(f"/?msg=Welcome Back {user.name}!", status_code=303)
+        response.set_cookie(key="session_id", value=session_id, httponly=True, max_age=3600, samesite="lax")
+        return response
     else:
         return templates.TemplateResponse(
             "login.html",
@@ -106,3 +116,9 @@ async def login(request: Request, email = Form(...), password = Form(...), db = 
             },
             status_code=401      
         )
+
+@app.get("/logout/", response_class=HTMLResponse)
+async def logout(request: Request):
+    session_id = request.cookies.get("session_id")
+    security.logout(session_id)
+    return templates.TemplateResponse("login.html", {"request": request, "message": "Logged Out Successfully!"})
