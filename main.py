@@ -21,23 +21,28 @@ def get_db():
 def startup():
     create_tables()
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/")
 async def root(request: Request, db: Session = Depends(get_db)):
-    current_user = security.get_logged_user(request, db)
+    current_user, is_api_request = security.get_logged_user(request, db)
     if (current_user):
         tasks = db.query(TaskDB).filter(TaskDB.user_id == current_user.id).order_by(TaskDB.id).all()
-        accept_header = request.headers.get("accept", "")
-        is_api_request = "application/json" in accept_header
         if (is_api_request):
+            tasks_data = [{"id": t.id, "title": t.title, "status": t.status} for t in tasks]
             return JSONResponse(
                 status_code=200,
-                content={"tasks": tasks}
+                content={"tasks": tasks_data}
             )
         else:
             msg = request.query_params.get("msg")
             return templates.TemplateResponse("index.html", {"request": request, "tasks_list": tasks, "message": msg})
     else:
-        return templates.TemplateResponse("login.html", {"request":request})    
+        if is_api_request:
+            return JSONResponse(
+                status_code=404,
+                content={"status": "error"}
+            )
+        else:
+            return templates.TemplateResponse("login.html", {"request":request})    
 
 @app.post("/add-task")
 async def add_task(

@@ -26,12 +26,9 @@ def generate_session_id():
 # returns User object of the current logged in user
 def get_logged_user(request: Request, db: Session):
     session_id = ""
-    accept_header = request.headers.get("Content-Type", "")
-    is_api_request = "application/json" in accept_header
-    if (is_api_request):
-        auth_header = request.headers.get("Authorization")
-        if not auth_header or not auth_header.startswith("Bearer "):
-            return None
+    auth_header = request.headers.get("Authorization")
+    is_api = auth_header and auth_header.startswith("Bearer ")
+    if is_api:
         session_id = auth_header.split(" ")[1]
     else:
         session_id = request.cookies.get("session_id")
@@ -42,7 +39,7 @@ def get_logged_user(request: Request, db: Session):
     if not user_id:
         return None
     
-    return db.query(User).get(int(user_id))
+    return (db.query(User).get(int(user_id)), is_api)
 
 def logout(session_id):
     redis_client.delete(f"session_id:{session_id}")
