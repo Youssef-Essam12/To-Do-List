@@ -6,7 +6,7 @@ import secrets
 import redis
 from models import User
 
-redis_client = redis.Redis(host="redis", port=6379, db=0, decode_responses=True)
+redis_client = redis.Redis(host="localhost", port=6379, db=0, decode_responses=True)
 
 
 def _pre_hash(password: str) -> bytes:
@@ -25,7 +25,16 @@ def generate_session_id():
 
 # returns User object of the current logged in user
 def get_logged_user(request: Request, db: Session):
-    session_id = request.cookies.get("session_id")
+    session_id = ""
+    accept_header = request.headers.get("Content-Type", "")
+    is_api_request = "application/json" in accept_header
+    if (is_api_request):
+        auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            return None
+        session_id = auth_header.split(" ")[1]
+    else:
+        session_id = request.cookies.get("session_id")
     if not session_id:
         return None
     
