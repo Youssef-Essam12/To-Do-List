@@ -51,36 +51,75 @@ async def add_task(
         status: str = Form(...),
         db: Session = Depends(get_db)
 ):
-    current_user = security.get_logged_user(request, db)
-    new_task = TaskDB(title=title, status=status, user_id=current_user.id)
-    db.add(new_task)
-    db.commit()
-    db.refresh(new_task)
-    return RedirectResponse("/", status_code=303)
+    current_user, is_api_request = security.get_logged_user(request, db)
+    if current_user:
+        new_task = TaskDB(title=title, status=status, user_id=current_user.id)
+        db.add(new_task)
+        db.commit()
+        db.refresh(new_task)
+        if (is_api_request):
+            return {"status_code": 200}
+        else:
+            return RedirectResponse("/", status_code=303)
+    else:
+        if is_api_request:
+            return JSONResponse(
+                status_code=404,
+                content={"status": "error"}
+            )
+        else:
+            return templates.TemplateResponse("login.html", {"request":request})   
 
 @app.post("/delete-task/{task_id}")
 async def delete_task(
+        request: Request,
         task_id: int,
         db: Session = Depends(get_db)
 ):
-    task = db.get(TaskDB, task_id)
-    if task:
-        db.delete(task)
-        db.commit()
-    return RedirectResponse("/", status_code=303)
+    current_user, is_api_request = security.get_logged_user(request, db)
+    if current_user:
+        task = db.get(TaskDB, task_id)
+        if task:
+            db.delete(task)
+            db.commit()
+        if is_api_request:
+            return {"status_code": 200}
+        else:
+            return RedirectResponse("/", status_code=303)
+    else:
+        if is_api_request:
+            return JSONResponse(
+                status_code=404,
+                content={"status": "error"}
+            )
+        else:
+            return templates.TemplateResponse("login.html", {"request":request})   
     
 
 @app.post("/toggle-task/{task_id}")
 async def toggle_task(
+    request: Request,
     task_id: int,
     db: Session = Depends(get_db)
 ):
-    task = db.get(TaskDB, task_id)
-    if task:
-        task.done ^= 1
-        db.commit()
-    tasks = db.query(TaskDB).all()
-    return RedirectResponse("/", status_code=303)
+    current_user, is_api_request = security.get_logged_user(request, db)
+    if current_user:
+        task = db.get(TaskDB, task_id)
+        if task:
+            task.done ^= 1
+            db.commit()
+        if is_api_request:
+            return {"status_code": 200}
+        else:
+            return RedirectResponse("/", status_code=303)
+    else:
+        if is_api_request:
+            return JSONResponse(
+                status_code=401,
+                content={"status": "error"}
+            )
+        else:
+            return templates.TemplateResponse("login.html", {"request":request})   
 
 @app.get("/signup/", response_class=HTMLResponse)
 async def signup_page(request: Request):
@@ -158,8 +197,24 @@ async def login(request: Request, email = Form(...), password = Form(...), db = 
                 status_code=401      
             )
 
-@app.get("/logout/", response_class=HTMLResponse)
-async def logout(request: Request):
-    session_id = request.cookies.get("session_id")
-    security.logout(session_id)
-    return templates.TemplateResponse("login.html", {"request": request, "message": "Logged Out Successfully!"})
+@app.get("/logout/")
+async def logout(request: Request, db: Session = Depends(get_db)):
+    current_user, is_api_request = security.get_logged_user(request, db)
+    if current_user:
+        if is_api_request:
+            auth_header = request.headers.get("Authorization")
+            session_id = auth_header.split(" ")[1]
+            security.logout(session_id)
+            return {"status_code": 200}
+        else:
+            session_id = request.cookies.get("session_id")
+            security.logout(session_id)
+            return templates.TemplateResponse("login.html", {"request": request, "message": "Logged Out Successfully!"})
+    else:
+        if is_api_request:
+            return JSONResponse(
+                status_code=401,
+                content={"status": "error"}
+            )
+        else:
+            return templates.TemplateResponse("login.html", {"request":request})   
