@@ -58,15 +58,12 @@ async def add_task(
         db.commit()
         db.refresh(new_task)
         if (is_api_request):
-            return {"status_code": 200}
+            return JSONResponse(status_code=201)
         else:
             return RedirectResponse("/", status_code=303)
     else:
         if is_api_request:
-            return JSONResponse(
-                status_code=404,
-                content={"status": "error"}
-            )
+            return JSONResponse(status_code=401)
         else:
             return templates.TemplateResponse("login.html", {"request":request})   
 

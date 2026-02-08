@@ -33,11 +33,11 @@ def get_logged_user(request: Request, db: Session):
     else:
         session_id = request.cookies.get("session_id")
     if not session_id:
-        return None
+        return (None, is_api)
     
     user_id = redis_client.get(f"session_id:{session_id}")
     if not user_id:
-        return None
+        return (None, is_api)
     
     return (db.query(User).get(int(user_id)), is_api)
 
