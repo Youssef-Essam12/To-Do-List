@@ -167,7 +167,7 @@ async def verify_session(request: Request, db = Depends(get_db)):
         if (is_api_request):
             return JSONResponse(
                 status_code=200,
-                content={"status": "ok", "message": f"Welcome Back {current_user.name}"}
+                content={"status": "ok", "message": f"Welcome Back {current_user.name}", "username": current_user.name}
             )
         else:
             return RedirectResponse(f"/?msg=Welcome Back {current_user.name}!", status_code=303)
@@ -176,7 +176,7 @@ async def verify_session(request: Request, db = Depends(get_db)):
             return JSONResponse(
                 status_code=401,
                 content={"status": "error", "message": "Incorrect Email or Password"}
-            )   
+            )
         else:
             return templates.TemplateResponse(
                 "login.html",
