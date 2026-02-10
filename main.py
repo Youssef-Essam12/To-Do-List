@@ -58,7 +58,7 @@ async def add_task(
         db.commit()
         db.refresh(new_task)
         if (is_api_request):
-            return JSONResponse(status_code=201)
+            return JSONResponse(status_code=201, content={"id": new_task.id})
         else:
             return RedirectResponse("/", status_code=303)
     else:
