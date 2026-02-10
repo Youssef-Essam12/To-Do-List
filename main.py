@@ -160,6 +160,34 @@ async def login_page(request: Request):
     msg = request.query_params.get("msg")
     return templates.TemplateResponse("login.html", {"request": request, "message": msg})
 
+@app.post("/verify-session/")
+async def verify_session(request: Request, db = Depends(get_db)):
+    current_user, is_api_request = security.get_logged_user(request, db)
+    if (current_user):
+        if (is_api_request):
+            return JSONResponse(
+                status_code=200,
+                content={"status": "ok", "message": f"Welcome Back {current_user.name}"}
+            )
+        else:
+            return RedirectResponse(f"/?msg=Welcome Back {current_user.name}!", status_code=303)
+    else:
+        if (is_api_request):
+            return JSONResponse(
+                status_code=401,
+                content={"status": "error", "message": "Incorrect Email or Password"}
+            )   
+        else:
+            return templates.TemplateResponse(
+                "login.html",
+                {
+                    "request": request,
+                    "message": "Login Failed"
+                },
+                status_code=401      
+            )
+        
+
 @app.post("/login/")
 async def login(request: Request, email = Form(...), password = Form(...), db = Depends(get_db)):
     # check if email exists and verify password
@@ -194,7 +222,7 @@ async def login(request: Request, email = Form(...), password = Form(...), db = 
                 status_code=401      
             )
 
-@app.get("/logout/")
+@app.post("/logout/")
 async def logout(request: Request, db: Session = Depends(get_db)):
     current_user, is_api_request = security.get_logged_user(request, db)
     if current_user:
