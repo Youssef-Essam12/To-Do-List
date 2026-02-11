@@ -5,8 +5,12 @@ from sqlalchemy.orm import Session
 import secrets
 import redis
 from models import User
+from dotenv import load_dotenv
+import os
 
-redis_client = redis.Redis(host="redis", port=6379, db=0, decode_responses=True)
+load_dotenv()
+
+redis_client = redis.Redis.from_url(os.environ["REDIS_URL"])
 
 
 def _pre_hash(password: str) -> bytes:
@@ -25,15 +29,21 @@ def generate_session_id():
 
 # returns User object of the current logged in user
 def get_logged_user(request: Request, db: Session):
-    session_id = request.cookies.get("session_id")
+    session_id = ""
+    auth_header = request.headers.get("Authorization")
+    is_api = auth_header and auth_header.startswith("Bearer ")
+    if is_api:
+        session_id = auth_header.split(" ")[1]
+    else:
+        session_id = request.cookies.get("session_id")
     if not session_id:
-        return None
+        return (None, is_api)
     
     user_id = redis_client.get(f"session_id:{session_id}")
     if not user_id:
-        return None
+        return (None, is_api)
     
-    return db.query(User).get(int(user_id))
+    return (db.query(User).get(int(user_id)), is_api)
 
 def logout(session_id):
     redis_client.delete(f"session_id:{session_id}")

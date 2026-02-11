@@ -1,8 +1,17 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
+from dotenv import load_dotenv
 import os
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://todo_user:todo@localhost/todo_db")
-# DATABASE_URL = "postgresql://todo_user:todo@db:5432/todo_db"
+
+load_dotenv()
+
+USER = os.getenv("user")
+PASSWORD = os.getenv("password")
+HOST = os.getenv("host")
+PORT = os.getenv("port")
+DBNAME = os.getenv("dbname")
+
+DATABASE_URL = f"postgresql+psycopg2://{USER}:{PASSWORD}@{HOST}:{PORT}/{DBNAME}?sslmode=require"
 
 engine = create_engine(DATABASE_URL)
 
