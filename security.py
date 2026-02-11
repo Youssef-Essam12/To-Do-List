@@ -5,8 +5,12 @@ from sqlalchemy.orm import Session
 import secrets
 import redis
 from models import User
+from dotenv import load_dotenv
+import os
 
-redis_client = redis.Redis(host="localhost", port=6379, db=0, decode_responses=True)
+load_dotenv()
+
+redis_client = redis.Redis.from_url(os.environ["REDIS_URL"])
 
 
 def _pre_hash(password: str) -> bytes:

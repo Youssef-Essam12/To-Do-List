@@ -6,3 +6,4 @@ bcrypt
 passlib
 redis
 pyopenssl
+python-dotenv

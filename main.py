@@ -200,7 +200,7 @@ async def login(request: Request, email = Form(...), password = Form(...), db = 
         if (is_api_request):
             return JSONResponse(
                 status_code=200,
-                content={"status": "ok", "message": f"Welcome Back {user.name}", "session_id": session_id}
+                content={"status": "ok", "message": f"Welcome Back {user.name}", "session_id": session_id, "username": user.name}
             )
         else:
             response = RedirectResponse(f"/?msg=Welcome Back {user.name}!", status_code=303)
